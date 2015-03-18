@@ -13,6 +13,7 @@
 extern "C" {
 #include "kondo_driver/ics.h"
 }
+#include "kondo_driver/setPower.h"
 
 /* Maximum motor num (32 is maximum on spec. sheet) */
 const int MAX_MOTOR_NUM = 12;
@@ -31,6 +32,7 @@ int radian_to_pulse (double radian)
     return CNT_PULSE + radian/RADIAN_PER_PULSE;
 }
 
+
 class KondoICSHW : public hardware_interface::RobotHW
 {
   private:
@@ -43,9 +45,16 @@ class KondoICSHW : public hardware_interface::RobotHW
     double eff[MAX_MOTOR_NUM];
     std::vector<std::string> joint_name;
     std::vector<std::string> motor_name;
-    
+    static bool motor_power;
   public:
+    static bool set_power (kondo_driver::setPower::Request &req, kondo_driver::setPower::Response &res) {
+	ROS_INFO("request: %d", req.request);
+	motor_power = req.request;
+	res.result = req.request;
+	return true;
+    }
     KondoICSHW () : joint_name(MAX_MOTOR_NUM, "none"), motor_name(MAX_MOTOR_NUM, "none") { 
+	motor_power = false;
 	pos[0] = pos[1] = 0;
 	vel[0] = vel[1] = 0;
 
@@ -83,11 +92,23 @@ class KondoICSHW : public hardware_interface::RobotHW
 	    }
 	}
 	registerInterface(&jnt_pos_interface);
+
+#if 0
+	// Start set_power service
+	for (int i=0; i<MAX_MOTOR_NUM; i++) {
+	    if (joint_name[i] != "none") {
+		ros::ServiceServer service = nh.advertiseService(joint_name[i]+std::string("/set_power"), set_power);
+	    }
+	}
+#endif
     }
     void update (void) {
 	for (int i=0; i<MAX_MOTOR_NUM; i++) {
 	    if (motor_name[i] != "none") {
-		int pulse_cmd = radian_to_pulse(cmd[i]);
+		int pulse_cmd = 0;
+		if ( motor_power == true) {
+		    pulse_cmd = radian_to_pulse(cmd[i]);
+		}
 		int pulse_ret = ics_pos(&ics, i, pulse_cmd);
 		pos[i] = pulse_to_radian (pulse_ret);
 		// ROS_INFO("pulse[%d]:cmd, ret: %d, %d\n", i, pulse_cmd, pulse_ret);
@@ -121,6 +142,9 @@ class KondoICSHW : public hardware_interface::RobotHW
     }
 };
 
+bool KondoICSHW::motor_power = false;
+
+
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "kondo_ics_driver");
@@ -129,7 +153,7 @@ int main(int argc, char **argv)
     KondoICSHW robot;
     controller_manager::ControllerManager cm(&robot, nh);
 
-    // ros::ServiceServer service = nh.advertiseService("set_power", set_power);
+    ros::ServiceServer service = nh.advertiseService("/set_power", robot.set_power);
 
     ros::Rate rate(1.0 / robot.getPeriod().toSec());
     ros::AsyncSpinner spinner(1);
@@ -145,16 +169,8 @@ int main(int argc, char **argv)
     return 0;
 }
 
-#if 0
-bool set_power(::Request  &req,
-         beginner_tutorials::AddTwoInts::Response &res)
-{
-  res.sum = req.a + req.b;
-  ROS_INFO("request: x=%ld, y=%ld", (long int)req.a, (long int)req.b);
-  ROS_INFO("sending back response: [%ld]", (long int)res.sum);
-  return true;
-}
 
+#if 0
 
 #include <transmission_interface/simple_transmission.h>
 #include <transmission_interface/transmission_interface.h>
