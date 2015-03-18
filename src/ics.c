@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-#include "ics.h"
+#include "kondo_driver/ics.h"
 
 /*-----------------------------------------------------------------------------
  * Convenience macros

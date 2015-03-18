@@ -104,7 +104,7 @@ include_directories(
 # )
 
 ## Declare a cpp executable
-add_executable(kondo_ics_driver src/kondo_ics_driver.cpp libkondo4/ics.c)
+add_executable(kondo_ics_driver src/kondo_ics_driver.cpp src/ics.c)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes

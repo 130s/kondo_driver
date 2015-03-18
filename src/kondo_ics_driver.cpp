@@ -11,11 +11,25 @@
 #include "hardware_interface/actuator_state_interface.h"
 #include "hardware_interface/robot_hw.h"
 extern "C" {
-#include "ics.h"
+#include "kondo_driver/ics.h"
 }
 
 /* Maximum motor num (32 is maximum on spec. sheet) */
 const int MAX_MOTOR_NUM = 12;
+const int MAX_PULSE = 11500;
+const int MIN_PULSE = 3500;
+const int CNT_PULSE = 7500;
+const double RADIAN_PER_PULSE = 270.0*M_PI/(MAX_PULSE-MIN_PULSE)/180.0;
+
+double pulse_to_radian (double pulse)
+{
+    return (pulse - CNT_PULSE)*RADIAN_PER_PULSE;
+}
+
+int radian_to_pulse (double radian)
+{
+    return CNT_PULSE + radian/RADIAN_PER_PULSE;
+}
 
 class KondoICSHW : public hardware_interface::RobotHW
 {
@@ -73,9 +87,9 @@ class KondoICSHW : public hardware_interface::RobotHW
     void update (void) {
 	for (int i=0; i<MAX_MOTOR_NUM; i++) {
 	    if (motor_name[i] != "none") {
-		int pulse_cmd = 8192.0 + cmd[i]*8192.0*180.0/M_PI/135.0;
+		int pulse_cmd = radian_to_pulse(cmd[i]);
 		int pulse_ret = ics_pos(&ics, i, pulse_cmd);
-		pos[i] = M_PI*135.0*(pulse_ret - 8192.0) / 8192.0 / 180.0;
+		pos[i] = pulse_to_radian (pulse_ret);
 		// ROS_INFO("pulse[%d]:cmd, ret: %d, %d\n", i, pulse_cmd, pulse_ret);
 	    }
 	}
