@@ -15,7 +15,6 @@ find_package(catkin REQUIRED COMPONENTS
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
-
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
 ## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
@@ -104,14 +103,14 @@ include_directories(
 # )
 
 ## Declare a cpp executable
-add_executable(kondo_ics_driver src/kondo_ics_driver.cpp src/ics.c)
+add_executable(kondo_driver src/kondo_driver.cpp src/ics.c)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
-# add_dependencies(kondo_ics_driver_node kondo_driver_generate_messages_cpp)
+# add_dependencies(kondo_driver_node kondo_driver_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(kondo_ics_driver
+target_link_libraries(kondo_driver
   ${catkin_LIBRARIES}
   usb ftdi
 )

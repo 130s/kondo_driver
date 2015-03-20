@@ -1,5 +1,0 @@
-kondo_ics_driver:
-  motor_0:
-    joint: joint_0
-  motor_1:
-    joint: joint_1
