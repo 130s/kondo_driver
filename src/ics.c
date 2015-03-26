@@ -36,7 +36,7 @@
  * 115200 baud, 8 bits, even parity, 1 stop bit.
  * Returns: 0 if successful, < 0 otherwise
  */
-int ics_init(ICSData * r)
+int ics_init(ICSData * r, int product_id)
 {
 	assert(r);
 	r->debug = 0;
@@ -49,13 +49,13 @@ int ics_init(ICSData * r)
 	// select first interface
 	if (ftdi_set_interface(&r->ftdic, INTERFACE_A) < 0) {
 	    fprintf (stderr, "set_interface");
-		ics_ftdi_error(r);
-		}
+	    ics_ftdi_error(r);
+	}
 	// open usb device
-	if (ftdi_usb_open(&r->ftdic, ICS_USB_VID, ICS_USB_PID) < 0) {
+	if (ftdi_usb_open(&r->ftdic, ICS_USB_VID, product_id) < 0) {
 	    fprintf (stderr, "open");
-		ics_ftdi_error(r);
-		}
+	    ics_ftdi_error(r);
+	}
 
 	// set baud rate
 	if (ftdi_set_baudrate(&r->ftdic, ICS_BAUD) < 0) {

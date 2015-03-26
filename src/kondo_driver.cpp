@@ -106,8 +106,12 @@ class KondoDriver : public hardware_interface::RobotHW
   public:
     KondoDriver (int num, char** actuators) {
 	ros::NodeHandle nh("~");
+	int product_id;
+	nh.param<int>("product_id", product_id, 0x0006);
+	ROS_INFO("product_id: %d", product_id);
+
 	// Initiallize ICS interface
-	if (ics_init(&ics) < 0) {
+	if (ics_init(&ics, product_id) < 0) {
 	    ROS_ERROR ("Could not init ICS: %s\n", ics.error);
 	}
 	// Load atuators

@@ -31,6 +31,7 @@
 //#define ICS_BAUD 1250000
 #define ICS_USB_VID 0x165c
 #define ICS_USB_PID 0x0008  // setting for DUAL USB adapter HS
+//#define ICS_USB_PID 0x0006  // setting for ICS USB adapter HS
 #define ICS_RX_TIMEOUT 1000000
 #define ICS_POS_TIMEOUT 2000
 #define ICS_GET_TIMEOUT 2000
@@ -69,7 +70,7 @@ typedef struct
 } ICSData;
 
 // low level comms
-int ics_init(ICSData * r);
+int ics_init(ICSData * r, int product_id);
 int ics_close(ICSData * r);
 int ics_write(ICSData * r, int n);
 int ics_read(ICSData * r, int n);
