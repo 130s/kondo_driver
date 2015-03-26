@@ -49,21 +49,21 @@ public:
 	res.result = req.request;
 	return true;
     }
-    KondoMotor (ICSData* ics, ros::NodeHandle nh, std::string actuator_name, hardware_interface::JointStateInterface& state_interface, hardware_interface::PositionJointInterface& pos_interface) {
-	cmd=0, pos=0;
+    KondoMotor (ICSData* ics, std::string actuator_name, hardware_interface::JointStateInterface& state_interface, hardware_interface::PositionJointInterface& pos_interface) : cmd(0), pos(0), vel(0), eff(0) {
 	motor_power = true;
 	this->ics = ics;
-	if (nh.getParam(actuator_name+std::string("/id"), id)) {
+	ros::NodeHandle nh(std::string("~")+actuator_name);
+	if (nh.getParam("id", id)) {
 	    ROS_INFO("id: %d", id);
 	}
-	if (nh.getParam(actuator_name+std::string("/joint"), joint_name)) {
+	if (nh.getParam("joint", joint_name)) {
 	    ROS_INFO("joint: %s", joint_name.c_str());
 	}
-	if (nh.getParam(actuator_name+std::string("/speed"), speed)) {
+	if (nh.getParam("speed", speed)) {
 	    ROS_INFO("speed: %d", speed);
 	    set_speed(speed);
 	}
-	if (nh.getParam(actuator_name+std::string("/stretch"), stretch)) {
+	if (nh.getParam("stretch", stretch)) {
 	    ROS_INFO("stretch: %d", stretch);
 	    set_stretch(stretch);
 	}
@@ -79,7 +79,9 @@ public:
 	    pulse_cmd = radian_to_pulse(cmd);
 	}
 	int pulse_ret = ics_pos(ics, id, pulse_cmd);
-	pos = pulse_to_radian (pulse_ret);
+	if (pulse_ret > 0) {
+	    pos = pulse_to_radian (pulse_ret);
+	}
     }
     // Set speed parameter
     void set_speed (unsigned char speed) {
@@ -113,10 +115,11 @@ class KondoDriver : public hardware_interface::RobotHW
 	// Initiallize ICS interface
 	if (ics_init(&ics, product_id) < 0) {
 	    ROS_ERROR ("Could not init ICS: %s\n", ics.error);
+	    exit(0);
 	}
 	// Load atuators
 	for (int i=0; i<num; i++) {
-	    boost::shared_ptr<KondoMotor> actuator(new KondoMotor(&ics, nh, std::string(actuators[i]), jnt_state_interface, jnt_pos_interface));
+	    boost::shared_ptr<KondoMotor> actuator(new KondoMotor(&ics, std::string(actuators[i]), jnt_state_interface, jnt_pos_interface));
 	    actuator_vector.push_back(actuator);
 	}
 	registerInterface(&jnt_state_interface);
