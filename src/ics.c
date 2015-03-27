@@ -415,7 +415,7 @@ int ics_set_current_limit(ICSData * r, UINT id, UCHAR curlim)
 	// check valid stuff
 	if (id > 31)
 		ics_error(r, "Invalid servo ID > 31.");
-	if (curlim > 1 || curlim > 63)
+	if (curlim < 1 || curlim > 63)
 		ics_error(r, "Invalid current, not [1-63]");
 
 	// build command
@@ -429,6 +429,36 @@ int ics_set_current_limit(ICSData * r, UINT id, UCHAR curlim)
 
 	return r->swap[5];
 }
+
+/*-----------------------------------------------------------------------------
+ * Set temperature limit parameter of the servo
+ * id: the id of the servo 0-31
+ * templim: the desired current limit 1-127
+ * Returns: the temperature limit as reported by the servo (>= 0), or < 0 if error
+ */
+int ics_set_temperature_limit(ICSData * r, UINT id, UCHAR templim)
+{
+	assert(r);
+	int i;
+
+	// check valid stuff
+	if (id > 31)
+		ics_error(r, "Invalid servo ID > 31.");
+	if (templim < 1 || templim > 127)
+		ics_error(r, "Invalid temperature, not [1-127]");
+
+	// build command
+	r->swap[0] = id | ICS_CMD_SET; // id and command
+	r->swap[1] = ICS_SC_TEMPERATURE; // subcommand
+	r->swap[2] = templim;
+
+	// synchronize
+	if ((i = ics_trx_timeout(r, 3, 6, ICS_SET_TIMEOUT)) < 0)
+		return i;
+
+	return r->swap[5];
+}
+
 /*-----------------------------------------------------------------------------
  * Get the ID of the connected servo
  * This command should be used with only one servo attached to the bus.

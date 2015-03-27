@@ -38,8 +38,11 @@ private:
     ros::ServiceServer power_service;
     int id;
     ICSData* ics;
-    int speed;
     int stretch;
+    int speed;
+    int curr_limit; // current limit
+    int temp_limit;
+    int min_angle, max_angle;
 public:
     double cmd, pos, vel, eff;
     std::string joint_name;
@@ -56,16 +59,34 @@ public:
 	if (nh.getParam("id", id)) {
 	    ROS_INFO("id: %d", id);
 	}
-	if (nh.getParam("joint", joint_name)) {
-	    ROS_INFO("joint: %s", joint_name.c_str());
+	// Check motor existence
+	if (ics_pos(ics, id, 0) <= 0) {
+	    ROS_WARN("Cannot connect to servo ID: %d", id);
+	}
+	if (nh.getParam("joint_name", joint_name)) {
+	    ROS_INFO("joint_name: %s", joint_name.c_str());
+	}
+	if (nh.getParam("min_angle", min_angle)) {
+	    ROS_INFO("min_angle: %d", min_angle);
+	}
+	if (nh.getParam("max_angle", max_angle)) {
+	    ROS_INFO("max_angle: %d", max_angle);
+	}
+	if (nh.getParam("stretch", stretch)) {
+	    ROS_INFO("stretch: %d", stretch);
+	    set_stretch(stretch);
 	}
 	if (nh.getParam("speed", speed)) {
 	    ROS_INFO("speed: %d", speed);
 	    set_speed(speed);
 	}
-	if (nh.getParam("stretch", stretch)) {
-	    ROS_INFO("stretch: %d", stretch);
-	    set_stretch(stretch);
+	if (nh.getParam("current_limit", curr_limit)) {
+	    ROS_INFO("current_limit: %d", curr_limit);
+	    set_current_limit(curr_limit);
+	}
+	if (nh.getParam("temperature_limit", temp_limit)) {
+	    ROS_INFO("temperature_limit: %d", temp_limit);
+	    set_temperature_limit(temp_limit);
 	}
 	hardware_interface::JointStateHandle state_handle(joint_name, &pos, &vel, &eff);
 	state_interface.registerHandle(state_handle);
@@ -75,6 +96,12 @@ public:
     }
     void update (void) {
 	int pulse_cmd = 0;
+	if (cmd < min_angle*3.14/180) {
+	    cmd = min_angle;
+	}
+	if (cmd > max_angle*3.14/180) {
+	    cmd = max_angle;
+	}
 	if (motor_power == true) {
 	    pulse_cmd = radian_to_pulse(cmd);
 	}
@@ -82,16 +109,37 @@ public:
 	if (pulse_ret > 0) {
 	    pos = pulse_to_radian (pulse_ret);
 	}
+	/* how can I get speed ? */
+	vel = 0;
+	/* get servo current */
+	int current = ics_get_current(ics, id);
+	if (current > 0) {
+	    if (current < 64) {
+		eff = current;
+	    } else {
+		eff = - (current - 64);
+	    }
+	}
     }
     // Set speed parameter
     void set_speed (unsigned char speed) {
-	this->speed = ics_set_stretch(ics, id, speed);
+	this->speed = ics_set_speed(ics, id, speed);
 	ROS_INFO("%s: %d", __func__, this->speed);
     }
     // Set strech parameter
     void set_stretch (unsigned char stretch) {
 	this->stretch = ics_set_stretch(ics, id, stretch);
 	ROS_INFO("%s: %d", __func__, this->stretch);
+    }
+    // Set current limit 
+    void set_current_limit (unsigned char curr) {
+	this->curr_limit = ics_set_stretch(ics, id, curr);
+	ROS_INFO("%s: %d", __func__, this->curr_limit);
+    }
+    // Set temperature limit
+    void set_temperature_limit (unsigned char temp) {
+	this->temp_limit = ics_set_temperature_limit(ics, id, temp);
+	ROS_INFO("%s: %d", __func__, this->temp_limit);
     }
 };
 
@@ -136,14 +184,6 @@ class KondoDriver : public hardware_interface::RobotHW
     }
     ros::Time getTime() const {return ros::Time::now();}
     ros::Duration getPeriod() const {return ros::Duration(0.01);}
-
-#if 0
-    void listMotors(void) {
-	for (int i=0; i<actuator_vector.size(); i++) {
-	    actuator_vector[i]->update();
-	}
-    }
-#endif
 };
 
 int main(int argc, char **argv)

@@ -2,21 +2,21 @@
 product_id: 0x0006 # ICS adapter HS
 
 joint_0_driver:
-  joint: joint_0
+  joint_name: joint_0
   id: 0
   min_angle: -135
   max_angle:  135
-  speed: 1
-  stretch: 100
-  punch: 1
-  dead_band: 2
+  stretch: 60
+  speed: 127
+  current_limit: 30
+  temperature_limit: 80
 
 joint_1_driver:
-  joint: joint_1
+  joint_name: joint_1
   id: 1
   min_angle: -135
   max_angle:  135
+  stretch: 60
   speed: 127
-  stretch: 100
-  punch: 1
-  dead_band: 2
+  current_limit: 30
+  temperature_limit: 80

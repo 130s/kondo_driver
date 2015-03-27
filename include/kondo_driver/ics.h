@@ -47,6 +47,7 @@
 #define ICS_SC_STRETCH 1
 #define ICS_SC_SPEED   2
 #define ICS_SC_CURRENT 3
+#define ICS_SC_TEMPERATURE 4
 #define ICS_SC_READ 0
 #define ICS_SC_WRITE 1
 
@@ -91,6 +92,7 @@ int ics_get_current(ICSData * r, UINT id);
 int ics_set_stretch(ICSData * r, UINT id, UCHAR stretch);
 int ics_set_speed(ICSData * r, UINT id, UCHAR speed);
 int ics_set_current_limit(ICSData * r, UINT id, UCHAR curlim);
+int ics_set_temperature_limit(ICSData * r, UINT id, UCHAR templim);
 
 // set servo id (for use when 1 servo is connected)
 int ics_get_id(ICSData * r);
