@@ -104,6 +104,7 @@ include_directories(
 
 ## Declare a cpp executable
 add_executable(kondo_driver src/kondo_driver.cpp src/ics.c)
+add_executable(set_ics_id src/set_ics_id.c src/ics.c)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
@@ -112,6 +113,9 @@ add_executable(kondo_driver src/kondo_driver.cpp src/ics.c)
 ## Specify libraries to link a library or executable target against
 target_link_libraries(kondo_driver
   ${catkin_LIBRARIES}
+  usb ftdi
+)
+target_link_libraries(set_ics_id
   usb ftdi
 )
 

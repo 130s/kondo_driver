@@ -34,6 +34,7 @@ int radian_to_pulse (double radian)
 
 class KondoMotor {
 private:
+    bool loopback;
     bool motor_power;
     ros::ServiceServer power_service;
     int id;
@@ -52,16 +53,19 @@ public:
 	res.result = req.request;
 	return true;
     }
-    KondoMotor (ICSData* ics, std::string actuator_name, hardware_interface::JointStateInterface& state_interface, hardware_interface::PositionJointInterface& pos_interface) : cmd(0), pos(0), vel(0), eff(0) {
+    KondoMotor (ICSData* ics, std::string actuator_name, hardware_interface::JointStateInterface& state_interface, hardware_interface::PositionJointInterface& pos_interface, bool loopback=false) : cmd(0), pos(0), vel(0), eff(0) {
 	motor_power = true;
+	this->loopback = loopback;
 	this->ics = ics;
 	ros::NodeHandle nh(std::string("~")+actuator_name);
 	if (nh.getParam("id", id)) {
 	    ROS_INFO("id: %d", id);
 	}
-	// Check motor existence
-	if (ics_pos(ics, id, 0) <= 0) {
-	    ROS_WARN("Cannot connect to servo ID: %d", id);
+	if (!loopback) {
+	    // Check motor existence
+	    if (ics_pos(ics, id, 0) <= 0) {
+		ROS_WARN("Cannot connect to servo ID: %d", id);
+	    }
 	}
 	if (nh.getParam("joint_name", joint_name)) {
 	    ROS_INFO("joint_name: %s", joint_name.c_str());
@@ -105,47 +109,69 @@ public:
 	if (motor_power == true) {
 	    pulse_cmd = radian_to_pulse(cmd);
 	}
-	int pulse_ret = ics_pos(ics, id, pulse_cmd);
-	if (pulse_ret > 0) {
-	    pos = pulse_to_radian (pulse_ret);
-	}
-	/* how can I get speed ? */
-	vel = 0;
-	/* get servo current */
-	int current = ics_get_current(ics, id);
-	if (current > 0) {
-	    if (current < 64) {
-		eff = current;
-	    } else {
-		eff = - (current - 64);
+	if (loopback) {
+	    pos = cmd;
+	    eff = 0;
+	}else{
+	    int pulse_ret = ics_pos(ics, id, pulse_cmd);
+	    if (pulse_ret > 0) {
+		pos = pulse_to_radian (pulse_ret);
+	    }
+	    /* how can I get speed ? */
+	    vel = 0;
+	    /* get servo current */
+	    int current = ics_get_current(ics, id);
+	    if (current > 0) {
+		if (current < 64) {
+		    eff = current;
+		} else {
+		    eff = - (current - 64);
+		}
 	    }
 	}
     }
     // Set speed parameter
     void set_speed (unsigned char speed) {
-	this->speed = ics_set_speed(ics, id, speed);
-	ROS_INFO("%s: %d", __func__, this->speed);
+	if (loopback) {
+	    this->speed = speed;
+	}else {
+	    this->speed = ics_set_speed(ics, id, speed);
+	    ROS_INFO("%s: %d", __func__, this->speed);
+	}
     }
     // Set strech parameter
     void set_stretch (unsigned char stretch) {
-	this->stretch = ics_set_stretch(ics, id, stretch);
-	ROS_INFO("%s: %d", __func__, this->stretch);
+	if (loopback) {
+	    this->stretch = stretch;
+	}else {
+	    this->stretch = ics_set_stretch(ics, id, stretch);
+	    ROS_INFO("%s: %d", __func__, this->stretch);
+	}
     }
     // Set current limit 
     void set_current_limit (unsigned char curr) {
-	this->curr_limit = ics_set_stretch(ics, id, curr);
-	ROS_INFO("%s: %d", __func__, this->curr_limit);
+	if (loopback) {
+	    curr_limit = curr;
+	}else {
+	    this->curr_limit = ics_set_stretch(ics, id, curr);
+	    ROS_INFO("%s: %d", __func__, this->curr_limit);
+	}
     }
     // Set temperature limit
     void set_temperature_limit (unsigned char temp) {
-	this->temp_limit = ics_set_temperature_limit(ics, id, temp);
-	ROS_INFO("%s: %d", __func__, this->temp_limit);
+	if (loopback) {
+	    temp_limit = temp;
+	}else {
+	    this->temp_limit = ics_set_temperature_limit(ics, id, temp);
+	    ROS_INFO("%s: %d", __func__, this->temp_limit);
+	}
     }
 };
 
 class KondoDriver : public hardware_interface::RobotHW
 {
   private:
+    bool loopback;
     // Hardware interface
     hardware_interface::JointStateInterface jnt_state_interface;
     hardware_interface::PositionJointInterface jnt_pos_interface;
@@ -160,14 +186,21 @@ class KondoDriver : public hardware_interface::RobotHW
 	nh.param<int>("product_id", product_id, 0x0006);
 	ROS_INFO("product_id: %d", product_id);
 
-	// Initiallize ICS interface
-	if (ics_init(&ics, product_id) < 0) {
-	    ROS_ERROR ("Could not init ICS: %s\n", ics.error);
-	    exit(0);
+	if (nh.getParam("loopback", loopback)) {
+	    if (loopback) {
+		ROS_WARN("loopback mode: the hardware is not used.");
+	    }
+	}
+	if (!loopback) {
+	    // Initiallize ICS interface
+	    if (ics_init(&ics, product_id) < 0) {
+		ROS_ERROR ("Could not init ICS: %s\n", ics.error);
+		exit(0);
+	    }
 	}
 	// Load atuators
 	for (int i=0; i<num; i++) {
-	    boost::shared_ptr<KondoMotor> actuator(new KondoMotor(&ics, std::string(actuators[i]), jnt_state_interface, jnt_pos_interface));
+	    boost::shared_ptr<KondoMotor> actuator(new KondoMotor(&ics, std::string(actuators[i]), jnt_state_interface, jnt_pos_interface, loopback));
 	    actuator_vector.push_back(actuator);
 	}
 	registerInterface(&jnt_state_interface);
@@ -180,7 +213,9 @@ class KondoDriver : public hardware_interface::RobotHW
 	}
     }
     ~KondoDriver () {
-	ics_close (&ics);
+	if (!loopback) {
+	    ics_close (&ics);
+	}
     }
     ros::Time getTime() const {return ros::Time::now();}
     ros::Duration getPeriod() const {return ros::Duration(0.01);}

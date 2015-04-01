@@ -2,7 +2,7 @@
   <!-- Load Kondo ICS parameters -->
   <rosparam file="$(find kondo_driver)/config/driver_sample.yaml" command="load" ns="kondo_driver"/>
   <!-- Start ICS driver -->
-  <node name="kondo_driver" pkg="kondo_driver" type="kondo_driver" args="joint_0_driver joint_1_driver" output="screen" />
+  <node name="kondo_driver" pkg="kondo_driver" type="kondo_driver" args="fake:=true joint_0_driver joint_1_driver" output="screen" />
   <!-- Load URDF model -->
   <param name="robot_description" command="cat $(find kondo_driver)/urdf/sample.urdf" />
   <!-- Load joint controller configurations from YAML file to parameter server -->

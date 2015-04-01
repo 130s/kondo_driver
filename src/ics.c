@@ -138,11 +138,12 @@ int ics_read_timeout(ICSData * r, int n, long usecs)
 	}
 	// spam the read until data arrives
 	do {
-		if ((i = ftdi_read_data(&r->ftdic, r->swap, n - bytes_read)) < 0)
-			ics_ftdi_error(r);
-		bytes_read += i;
-		gettimeofday(&tv, NULL);
-	} while (bytes_read < n && (tv.tv_sec < end.tv_sec && tv.tv_usec < end.tv_usec));
+	    if ((i = ftdi_read_data(&r->ftdic, r->swap, n - bytes_read)) < 0) {
+		ics_ftdi_error(r);
+	    }
+	    bytes_read += i;
+	    gettimeofday(&tv, NULL);
+	} while (bytes_read < n && (tv.tv_sec <= end.tv_sec || tv.tv_usec < end.tv_usec));
 	return bytes_read;
 }
 
@@ -496,17 +497,33 @@ int ics_set_id(ICSData * r, UINT id)
 
 	// check id
 	if (id > 31)
-		ics_error(r, "Invalid servo ID, > 31.");
+	    ics_error(r, "Invalid servo ID, > 31.");
 
 	// build command
 	r->swap[0] = id | ICS_CMD_ID;
 	r->swap[1] = ICS_SC_WRITE;
 	r->swap[2] = ICS_SC_WRITE;
 	r->swap[3] = ICS_SC_WRITE;
-
+	if (r->debug) {
+	    int i;
+	    for (i=0; i<4; i++) {
+		printf("%x ", r->swap[i]);
+	    }
+	    printf("\n");
+	}
+	// This seems bug. set_id must wait some time before read.
+#if 0	
 	// synchronize
 	if ((i = ics_trx_timeout(r, 4, 5, ICS_ID_TIMEOUT)) < 0)
 		return i;
+#endif
+	if ((i=ics_write (r, 4)) < 0) {
+	    return -1;
+	}
+	sleep (3);
+	if ((i=ics_read(r, 5)) < 0) {
+	    return -1;
+	}	    
 
 	// return the ID
 	return r->swap[4] & 0x1F;
