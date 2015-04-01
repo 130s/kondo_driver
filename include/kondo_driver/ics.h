@@ -36,7 +36,8 @@
 #define ICS_POS_TIMEOUT 2000
 #define ICS_GET_TIMEOUT 2000
 #define ICS_SET_TIMEOUT 2000
-#define ICS_ID_TIMEOUT 2000
+//#define ICS_ID_TIMEOUT 2000
+#define ICS_ID_TIMEOUT 1000000
 
 // ics commands
 #define ICS_CMD_POS 0x80

@@ -46,6 +46,7 @@ int ics_init(ICSData * r, int product_id)
 	    fprintf (stderr, "init");
 		ics_ftdi_error(r);
 	}
+        // ftdic.usb_read_timeout = 50000; 
 	// select first interface
 	if (ftdi_set_interface(&r->ftdic, INTERFACE_A) < 0) {
 	    fprintf (stderr, "set_interface");
@@ -142,7 +143,7 @@ int ics_read_timeout(ICSData * r, int n, long usecs)
 			ics_ftdi_error(r);
 		bytes_read += i;
 		gettimeofday(&tv, NULL);
-	} while (bytes_read < n && (tv.tv_sec < end.tv_sec && tv.tv_usec < end.tv_usec));
+	} while (bytes_read < n && (tv.tv_sec <= end.tv_sec && tv.tv_usec < end.tv_usec));
 	return bytes_read;
 }
 
@@ -186,6 +187,7 @@ int ics_trx_timeout(ICSData * r, UINT bytes_out, UINT bytes_in, long timeout)
 	if ((i = ics_write(r, bytes_out)) < 0)
 		return i;
 
+	sleep (1);
 	// debug printing
 	if (r->debug) {
 		printf("send %d bytes: ", i);
