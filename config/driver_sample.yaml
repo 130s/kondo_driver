@@ -1,5 +1,5 @@
-# product_id: 0x0008 # Dual adapter HS
-product_id: 0x0006 # ICS adapter HS
+product_id: 0x0008 # Dual adapter HS
+#product_id: 0x0006 # ICS adapter HS
 
 joint_0_driver:
   joint_name: joint_0
