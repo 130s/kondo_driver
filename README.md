@@ -1,4 +1,4 @@
-# Kondo ICS motor (KRS40xxHV, etc.) driver
+# Kondo ICS motor driver
 
 This ROS package contains hardware interface to Kondo Kagaku's ICS
 motor system. ICS(Interactive Communication System) is a kind of
@@ -16,18 +16,19 @@ This package contains ics read/write code (ics.c, ics.h) from [libkondo4 project
 
 ### ICS servo motors
 * [KRS-4031HV ICS](http://kondo-robot.com/product/krs-4031hv-ics)
-* [KRS-4031HV ICS](http://kondo-robot.com/product/krs-4031hv-ics)
+* [KRS-4032HV ICS](http://kondo-robot.com/product/krs-4032hv-ics)
 
 # Quick start
 
 ## Setting servo ID.
 Connect each servo and the adapter one to one.
 For setting servo ID, you can use ics_set_id.
+
 ```
 $ rosrun ics_set_id <product_id> <id>
 ```
 
-<product id> is 6 for 'ICS USB adapter HS', 8 for 'dual ICS adapter HS'.
+product_id is 6 for 'ICS USB adapter HS', 8 for 'dual ICS adapter HS'.
 
 After setting each servo motor, you can connect your motors as you want.
 
@@ -52,13 +53,18 @@ The kondo_driver is fit for using ros_controllers. Check config/controller_sampl
 This example uses position_controllers/JointPositionController to control joint position and joint_state_controller/JointStateController to publish /joint_states.
 
 ## Launch kondo_driver.launch to bring up driver.
+
 The following sample bring up controllers. 
+
 ```
 $ roslaunch kondo_driver kondo_driver.launch
 ```
+
 ## Command the servo
+
 Check if you can command the sevo position.
 Publish /joint_0_controller/command (std_msgs/Float64) to control joint angle. Unit is in radian.
+
 ```
 $ rostopic pub -1 /joint_0_controller/command std_msgs/Float64 "data: 0.0"
 ```
